@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Among Us options modifier</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            @property --angle {
+                syntax: "<angle>";
+                inherits: false;
+                initial-value: 0deg;
+            }
+
+            @import url('https://fonts.googleapis.com/css2?family=Aldrich&display=swap');
+
+            /*
+            primary: #222
+            secondary: #3a3a3a
+            accent: #e26223
+            */
+
+            body {
+                background: #222;
+                color: white;
+                margin: 0;
+                /*font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif; 
+            }
+
+            #overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: calc(100% - 32px);
+                height: calc(100% - 32px);
+                padding: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #0007;
+                transition: .2s ease-in-out opacity;
+                opacity: 1;
+                z-index: 5;
+            }
+            .popup {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            #data-popup button, #setval-popup button, #setval-popup input {
+                margin: 0 0 8px 8px;
+                min-width: 60px;
+            }
+
+            button, input, select, textarea {
+                outline: none !important;
+                border: 1.5px #555 solid;
+                background: #3a3a3a;
+                padding: 5px;
+                color: white;
+                border-radius: 0;
+            }
+            button:active, input:focus, .alert:hover, select:focus, textarea:focus {
+                border: 1.5px #e26223 solid;
+            }
+            input[type=text], textarea {
+                width: 250px;
+            }
+            input[type=number] {
+                width: 60px;
+            }
+            button, select {
+                cursor: pointer;
+            }
+
+            #alerts {
+                z-index: 6;
+                position: fixed;
+                right: 0;
+                top: 0;
+            }
+            .alert {
+                background: #3a3a3a;
+                border: 1.5px #555 solid;
+                transition: .3s right ease-in-out;
+                right: -100%;
+                padding: 5px;
+                position: relative;
+                margin-top: 12px;
+            }
+
+            .topbar {
+                padding: 16px;
+                display: flex;
+                gap: 8px;
+                justify-content: center;
+                border-bottom: #555 1.5px solid;
+            }
+            .topbar button {
+                width: 100%;
+                max-width: 250px;
+            }
+            .topbar button.selected {
+                border: 1.5px #e26223 solid;
+            }
+            #topbar .export {
+                position: absolute;
+                right: 16px;
+                max-width: 80px;
+                background: linear-gradient(#3a3a3a) padding-box, linear-gradient(var(--angle), #555, #e26223) border-box;
+                border-color: #0000;
+                animation: rotate 2s linear infinite;
+            }
+            @media screen and (max-width: 716px) {
+                #topbar {
+                    padding-right: calc(87px + 16px);
+                }
+            }
+            #roles-topbar button {
+                max-width: 100px;
+            }
+
+            .header {
+                font-size: 20px;
+                margin: 16px;
+            }
+
+            .page {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .page > div {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                height: 29.2px;
+            }
+            .page > * {
+                padding: 0 16px;
+            }
+            .page > div:nth-child(2n) {
+                background: #2a2a2a;
+            }
+            .spacer {
+                flex: 1;
+            }
+            .page .setval {
+                margin-left: 8px;
+                /* text-decoration:overline; */
+                cursor: pointer;
+                color: #e26223;
+            }
+            
+            #options {
+                margin: 0 auto;
+                margin-top: 16px;
+                width: 100%;
+                max-width: 1024px;
+                margin-bottom: 16px;
+            }
+
+            #roles-all table {
+                border-spacing: 0;
+            }
+            #roles-all tr:nth-child(2n) {
+                background: #2a2a2a;
+            }
+            #roles-all td {
+                padding: 0px 8px;
+            }
+            #roles-all tr:not(:nth-child(2n)) td {
+                padding: 8px;
+            }
+
+            #export-popup textarea {
+                resize: none;
+                height: 150px;
+                margin-bottom: 8px;
+            }
+            #export-popup button {
+                min-width: 100px;
+            }
+
+            #setval-popup input {
+                width: 120px;
+            }
+
+            @keyframes pulse {
+                0%, 100% {
+                    border: 1.5px solid #555;
+                }
+                50% {
+                    border: 1.5px solid #e26223;
+                }
+            }
+            @keyframes rotate {
+                to {
+                    --angle: 360deg;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="overlay">
+            <div id="data-popup" class="popup">
+                <p>To continue, paste the base64 encoded serialized normalGameOptionV10 string:</p>
+                <div>
+                    <input type="text"><button name="continue">Continue</button>
+                </div>
+                <div>
+                    <button name="core">Core settings</button><button name="roles">Roles galore</button>
+                </div>
+            </div>
+            <div id="loading-popup" class="popup" style="display: none">
+                <p class="header">Loading...</p>
+            </div>
+            <div id="setval-popup" class="popup" style="display: none">
+                <p>Enter new value as integer:</p>
+                <input type="number" min="0" max="255" step="1">
+                <div>
+                    <button name="ok">OK</button><button name="cancel">Cancel</button>
+                </div>
+            </div>
+            <div id="export-popup" class="popup" style="display: none">
+                <textarea readonly></textarea>
+                <button>Close</button>
+            </div>
+        </div>
+        <div id="alerts"></div>
+        <div class="topbar" id="topbar">
+            <button name="game" class="selected">Game options</button>
+            <button name="roles">Role options</button>
+            <button class="export">Export</button>
+        </div>
+        <div class="topbar" id="roles-topbar" style="display: none">
+            <button name="all" class="selected">All</button>
+            <button name="crewmates">Crewmates</button>
+            <button name="impostors">Impostors</button>
+        </div>
+        <div id="options">
+            <div id="game" class="page">
+                <div><span class="header">Map</span><div class="spacer"></div><select name="mapId">
+                    <option value="0">The Skeld (0)</option>
+                    <option value="1">Mira HQ (1)</option>
+                    <option value="2">Polus (2)</option>
+                    <option value="4">the Airship (4)</option>
+                    <option value="5">the Fungle (5)</option>
+                    <option value="3">dlekS ehT (3)</option>
+                </select><a class="setval">*</a></div>
+
+                <p class="header">Impostors</p>
+                <div><span># Impostors</span><input type="number" name="impostors" min="0" max="255" step="1"></div>
+                <div><span>Kill cooldown</span><input type="number" name="killCooldown"></div>
+                <div><span>Impostor vision</span><input type="number" name="impostorVision"></div>
+                <div><span>Kill distance</span><div class="spacer"></div><select name="killDistance">
+                    <option value="0">Short</option>
+                    <option value="1">Medium</option>
+                    <option value="2">Long</option>
+                </select><a class="setval">*</a></div>
+
+                <p class="header">Crewmates</p>
+                <div><span>Player speed</span><input type="number" name="playerSpeed"></div>
+                <div><span>Crewmate vision</span><input type="number" name="crewmateVision"></div>
+
+                <p class="header">Meetings</p>
+                <div><span># Emergency meetings</span><input type="number" name="emergencyMeetings" min="0" max="16777215" step="1"></div>
+                <div><span>Emergency cooldown (sec)</span><input type="number" name="emergencyCooldown" min="0" max="255" step="1"></div>
+                <div><span>Discussion time (sec)</span><input type="number" name="discussionTime" min="0" max="16777215" step="1"></div>
+                <div><span>Voting time (sec)</span><input type="number" name="votingTime" min="0" max="16777215" step="1"></div>
+                <div><span>Anonymous votes</span><input type="checkbox" name="anonymousVotes"></div>
+                <div><span>Confirm ejects</span><input type="checkbox" name="confirmEjects"></div>
+
+                <p class="header">Tasks</p>
+                <div><span>Task bar updates</span><div class="spacer"></div><select name="taskBarMode">
+                    <option value="0">Always</option>
+                    <option value="1">Meetings</option>
+                    <option value="2">Never</option>
+                </select><a class="setval">*</a></div>
+                <div><span># Common tasks</span><input type="number" name="commonTasks" min="0" max="255" step="1"></div>
+                <div><span># Long tasks</span><input type="number" name="longTasks" min="0" max="255" step="1"></div>
+                <div><span># Short tasks</span><input type="number" name="shortTasks" min="0" max="255" step="1"></div>
+                <div><span>Visual tasks</span><input type="checkbox" name="visualTasks"></div>
+
+                <p class="header">Other</p>
+                <div><span>Max players</span><input type="number" name="maxPlayers" min="0" max="255" step="1"></div>
+                <div><span>Special mode</span><div class="spacer"></div><select name="specialMode">
+                    <option value="0">None (0)</option>
+                    <option value="1">April fools (1)</option>
+                </select><a class="setval">*</a></div>
+                <div><span>Tag</span><div class="spacer"></div><select name="tag">
+                    <option value="0">Default (TODO: add values) (0)</option>
+                </select><a class="setval">*</a></div>
+                <div><span>Language (keywords)</span><div class="spacer"></div><select name="language">
+                    <option value="0">Default (TODO: add values) (0)</option>
+                </select><a class="setval">*</a></div>
+                <div><span>Game mode ID</span><input type="number" name="gameMode" min="0" max="255" step="1"></div>
+                <div><span>Rules preset (does not change values!)</span><div class="spacer"></div><select name="rulesPreset">
+                    <option value="0">Standard (0)</option>
+                    <option value="1">Standard roles (1)</option>
+                    <option value="2">Flashlight (2)</option>
+                    <option value="100">Custom (100)</option>
+                </select><a class="setval">*</a></div>
+                <div><span>Is defaults</span><input type="checkbox" name="isDefaults"></div>
+            </div>
+            <div id="roles" style="display: none">
+                <div id="roles-all" class="page">
+                    <p class="header">Crewmate roles</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <td></td>
+                                <td>Export?</td>
+                                <td># of role</td>
+                                <td>% chance</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Scientist</td>
+                                <td><input type="checkbox" name="roleData.scientist.loaded"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.scientist.amount" step="1"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.scientist.chance" step="1"></td>
+                            </tr>
+                            <tr>
+                                <td>Guardian angel</td>
+                                <td><input type="checkbox" name="roleData.angel.loaded"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.angel.amount" step="1"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.angel.chance" step="1"></td>
+                            </tr>
+                            <tr>
+                                <td>Engineer</td>
+                                <td><input type="checkbox" name="roleData.engineer.loaded"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.engineer.amount" step="1"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.engineer.chance" step="1"></td>
+                            </tr>
+                            <tr>
+                                <td>Noisemaker</td>
+                                <td><input type="checkbox" name="roleData.noisemaker.loaded"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.noisemaker.amount" step="1"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.noisemaker.chance" step="1"></td>
+                            </tr>
+                            <tr>
+                                <td>Tracker</td>
+                                <td><input type="checkbox" name="roleData.tracker.loaded"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.tracker.amount" step="1"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.tracker.chance" step="1"></td>
+                            </tr>
+                            <tr>
+                                <td>Detective</td>
+                                <td><input type="checkbox" name="roleData.detective.loaded"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.detective.amount" step="1"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.detective.chance" step="1"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="header">Impostor roles</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <td></td>
+                                <td>Export?</td>
+                                <td># of role</td>
+                                <td>% chance</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Shapeshifter</td>
+                                <td><input type="checkbox" name="roleData.shapeshifter.loaded"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.shapeshifter.amount" step="1"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.shapeshifter.chance" step="1"></td>
+                            </tr>
+                            <tr>
+                                <td>Phantom</td>
+                                <td><input type="checkbox" name="roleData.phantom.loaded"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.phantom.amount" step="1"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.phantom.chance" step="1"></td>
+                            </tr>
+                            <tr>
+                                <td>Viper</td>
+                                <td><input type="checkbox" name="roleData.viper.loaded"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.viper.amount" step="1"></td>
+                                <td><input type="number" min="0" max="255" name="roleData.viper.chance" step="1"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="roles-crewmates" style="display: none" class="page">
+                    <p class="header">Scientist</p>
+                    <div><span>Vitals display cooldown (sec)</span><input type="number" name="roleData.scientist.vitalsCooldown" min="0" max="255" step="1"></div>
+                    <div><span>Battery duration (sec)</span><input type="number" name="roleData.scientist.batteryCharge" min="0" max="255" step="1"></div>
+                    
+                    <p class="header">Guardian angel</p>
+                    <div><span>Protect cooldown (sec)</span><input type="number" name="roleData.angel.protectCooldown" min="0" max="255" step="1"></div>
+                    <div><span>Protect duration (sec)</span><input type="number" name="roleData.angel.protectDuration" min="0" max="255" step="1"></div>
+                    <div><span>Protect visible to impostors</span><input type="checkbox" name="roleData.angel.impsSeeProtect"></div>
+                    
+                    <p class="header">Engineer</p>
+                    <div><span>Vent use cooldown (sec)</span><input type="number" name="roleData.engineer.ventsCooldown" min="0" max="255" step="1"></div>
+                    <div><span>Max time in vents (sec) (0 = ∞)</span><input type="number" name="roleData.engineer.ventsMaxTime" min="0" max="255" step="1"></div>
+                    
+                    <p class="header">Noisemaker</p>
+                    <div><span>Impostors get alert</span><input type="checkbox" name="roleData.noisemaker.impostersHear"></div>
+                    <div><span>Alert duration (sec)</span><input type="number" name="roleData.noisemaker.noiseDuration" min="0" max="255" step="1"></div>
+                    
+                    <p class="header">Tracker</p>
+                    <div><span>Tracking cooldown (sec)</span><input type="number" name="roleData.tracker.trackCooldown" min="0" max="255" step="1"></div>
+                    <div><span>Tracking delay (sec)</span><input type="number" name="roleData.tracker.trackDelay" min="0" max="255" step="1"></div>
+                    <div><span>Tracking duration (sec)</span><input type="number" name="roleData.tracker.trackDuration" min="0" max="255" step="1"></div>
+                    
+                    <p class="header">Detective</p>
+                    <div><span>Suspects per case</span><input type="number" name="roleData.detective.suspectLimit" min="0" max="255" step="1"></div>
+                </div>
+                <div id="roles-impostors" style="display: none" class="page">
+                    <p class="header">Shapeshifter</p>
+                    <div><span>Leave shapeshift evidence</span><input type="checkbox" name="roleData.shapeshifter.leaveEvidence"></div>
+                    <div><span>Shapeshift duration (sec) (0 = ∞)</span><input type="number" name="roleData.shapeshifter.shapeshiftDuration" min="0" max="255" step="1"></div>
+                    <div><span>Shapeshift cooldown (sec)</span><input type="number" name="roleData.shapeshifter.shapeshiftCooldown" min="0" max="255" step="1"></div>
+                    <p class="header">Phantom</p>
+                    <div><span>Vanish duration (sec)</span><input type="number" name="roleData.phantom.vanishCooldown" min="0" max="255" step="1"></div>
+                    <div><span>Vanish cooldown (sec)</span><input type="number" name="roleData.phantom.vanishDuration" min="0" max="255" step="1"></div>
+                    <p class="header">Viper</p>
+                    <div><span>Dissolve time (sec)</span><input type="number" name="roleData.viper.dissolveTime" min="0" max="255" step="1"></div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function deserializeRoleDataV10(bytearray) {
+                let result = {};
+                let roleIdMap = {
+                    2: "scientist",
+                    3: "engineer",
+                    4: "angel",
+                    5: "shapeshifter",
+                    8: "noisemaker",
+                    9: "phantom",
+                    10: "tracker",
+                    12: "detective",
+                    18: "viper"
+                };
+                for (let i in roleIdMap)
+                    result[roleIdMap[i]] = {loaded: false};
+                let dv = new DataView(bytearray);
+                dv.getBool = (offset) => dv.getUint8(offset) > 0;
+                let count = dv.getUint8();
+
+                let pos = 1;
+                for (let i = 0; i < count; i++) {
+                    let roleId = dv.getInt16(pos, true); pos += 2;
+                    if (!roleIdMap.hasOwnProperty(roleId))
+                        return {success: false, error: "Role ID "+roleId+" not found", code:0+0x100};
+                    let roleRes = {
+                        amount: dv.getUint8(pos),
+                        chance: dv.getUint8(pos+1),
+                        loaded: true
+                    }; pos += 2;
+                    pos += 3;
+                    switch (roleId) {
+                        case 2: // scientist
+                            roleRes.batteryCharge = dv.getUint8(pos);
+                            roleRes.vitalsCooldown = dv.getUint8(pos+1);
+                            pos += 2;
+                            break;
+                        case 3: // engineer
+                            roleRes.ventsCooldown = dv.getUint8(pos);
+                            roleRes.ventsMaxTime = dv.getUint8(pos+1);
+                            pos += 2;
+                            break;
+                        case 4: // angel
+                            roleRes.protectCooldown = dv.getUint8(pos);
+                            roleRes.protectDuration = dv.getUint8(pos+1);
+                            roleRes.impsSeeProtect = dv.getBool(pos+2);
+                            pos += 3;
+                            break;
+                        case 5: // shapeshifter
+                            roleRes.leaveEvidence = dv.getBool(pos);
+                            roleRes.shapeshiftCooldown = dv.getUint8(pos+1);
+                            roleRes.shapeshiftDuration = dv.getUint8(pos+2);
+                            pos += 3;
+                            break;
+                        case 8: // noisemaker
+                            roleRes.noiseDuration = dv.getUint8(pos);
+                            roleRes.impostersHear = dv.getBool(pos+1);
+                            pos += 2;
+                            break;
+                        case 9: // phantom
+                            roleRes.vanishCooldown = dv.getUint8(pos);
+                            roleRes.vanishDuration = dv.getUint8(pos+1);
+                            pos += 2;
+                            break;
+                        case 10: // tracker
+                            roleRes.trackCooldown = dv.getUint8(pos);
+                            roleRes.trackDuration = dv.getUint8(pos+1);
+                            roleRes.trackDelay = dv.getUint8(pos+2);
+                            pos += 3;
+                            break;
+                        case 12: // detective
+                            roleRes.suspectLimit = dv.getUint8(pos);
+                            pos += 1;
+                            break;
+                        case 18: // viper
+                            roleRes.dissolveTime = dv.getUint8(pos);
+                            pos += 1;
+                            break;
+                    }
+                    result[roleIdMap[roleId]] = roleRes;
+                }
+                return {success: true, data: result};
+            }
+
+            function deserializeNormalGameOptionsV10(bytearray) {
+                let result = {};
+                let dv = new DataView(bytearray);
+                if (dv.getUint8() != 10) 
+                    return {success: false, error: "Options version is not V10", code: 0};
+                if (dv.getInt8(0x4) != 1)
+                    return {success: false, error: "Game mode ID is not 0x1", code: 1};
+                dv.getBool = (offset) => dv.getUint8(offset) > 0;
+
+                result.gameMode = dv.getUint8(0x4);
+                result.specialMode = dv.getUint8(0x5);
+                result.rulesPreset = dv.getUint8(0x6);
+                result.maxPlayers = dv.getUint8(0x7);
+                result.language = dv.getUint32(0x8, true);
+                result.mapId = dv.getUint8(0xc);
+                result.playerSpeed = dv.getFloat32(0xd, true);
+                result.crewmateVision = dv.getFloat32(0x11, true);
+                result.impostorVision = dv.getFloat32(0x15, true);
+                result.killCooldown = dv.getFloat32(0x19, true);
+                result.commonTasks = dv.getUint8(0x1d);
+                result.longTasks = dv.getUint8(0x1e);
+                result.shortTasks = dv.getUint8(0x1f);
+                result.emergencyMeetings = dv.getInt32(0x20, true);
+                result.impostors = dv.getUint8(0x24);
+                result.killDistance = dv.getUint8(0x25);
+                result.discussionTime = dv.getInt32(0x26, true);
+                result.votingTime = dv.getInt32(0x2a, true);
+                result.isDefaults = dv.getBool(0x2e);
+                result.emergencyCooldown = dv.getUint8(0x2f);
+                result.confirmEjects = dv.getBool(0x30);
+                result.visualTasks = dv.getBool(0x31);
+                result.anonymousVotes = dv.getBool(0x32);
+                result.taskBarMode = dv.getUint8(0x33);
+                result.tag = dv.getUint8(0x34);
+
+                let roleData = deserializeRoleDataV10(bytearray.slice(0x35));
+                if (!roleData.success) 
+                    return {success: false, error: "roleData: "+roleData.error};
+                result.roleData = roleData.data;
+                return {success: true, data: result};
+            }
+
+            function serializeRoleDataV10(buffer, roleData) {
+                let roleIdMap = {
+                    "scientist": 2,
+                    "engineer": 3,
+                    "angel": 4,
+                    "shapeshifter": 5,
+                    "noisemaker": 8,
+                    "phantom": 9,
+                    "tracker": 10,
+                    "detective": 12,
+                    "viper": 18
+                };
+                let roleSizeMap = {
+                    "scientist": 2,
+                    "engineer": 2,
+                    "angel": 3,
+                    "shapeshifter": 3,
+                    "noisemaker": 2,
+                    "phantom": 2,
+                    "tracker": 3,
+                    "detective": 1,
+                    "viper": 1
+                };
+                let length = 0;
+                let roleCount = 0;
+                for (let i in roleData)
+                    if (roleData[i].loaded) {
+                        length += 7 + roleSizeMap[i];
+                        roleCount++;
+                    }
+                if (!buffer) return length;
+                let dv = new DataView(buffer);
+                dv.setBool = (offset, value) => dv.setUint8(offset, (value ? 1 : 0)) > 0;
+                
+                let pos = 1;
+                dv.setUint8(0, roleCount);
+                for (let i in roleIdMap) {
+                    let role = roleData[i];
+                    if (!role.loaded) continue;
+                    dv.setUint16(pos, roleIdMap[i], true); pos += 2;
+                    dv.setUint8(pos, role.amount); pos++;
+                    dv.setUint8(pos, role.chance); pos++;
+                    dv.setUint16(pos, roleSizeMap[i], true); pos += 2;
+                    dv.setUint8(pos, 0x0); pos++;
+                    switch (roleIdMap[i]) {
+                        case 2: // scientist
+                            dv.setUint8(pos, role.batteryCharge);
+                            dv.setUint8(pos+1, role.vitalsCooldown);
+                            break;
+                        case 3: // engineer
+                            dv.setUint8(pos, role.ventsCooldown);
+                            dv.setUint8(pos+1, role.ventsMaxTime);
+                            break;
+                        case 4: // angel
+                            dv.setUint8(pos, role.protectCooldown);
+                            dv.setUint8(pos+1, role.protectDuration);
+                            dv.setBool(pos+2, role.impsSeeProtect)
+                            break;
+                        case 5: // shapeshifter
+                            dv.setBool(pos, role.leaveEvidence)
+                            dv.setUint8(pos+1, role.shapeshiftCooldown);
+                            dv.setUint8(pos+2, role.shapeshiftDuration);
+                            break;
+                        case 8: // noisemaker
+                            dv.setUint8(pos, role.noiseDuration);
+                            dv.setBool(pos+1, role.impostersHear);
+                            break;
+                        case 9: // phantom
+                            dv.setUint8(pos, role.vanishCooldown);
+                            dv.setUint8(pos+1, role.vanishDuration);
+                            break;
+                        case 10: // tracker
+                            dv.setUint8(pos, role.trackCooldown);
+                            dv.setUint8(pos+1, role.trackDuration);
+                            dv.setUint8(pos+2, role.trackDelay);
+                            break;
+                        case 12: // detective
+                            dv.setUint8(pos, role.suspectLimit);
+                            break;
+                        case 18: // viper
+                            dv.setUint8(pos, role.dissolveTime);
+                            break;
+                    }
+                    pos += roleSizeMap[i];
+                }
+                return buffer;
+            }
+
+            function serializeNormalGameOptionsV10(settings) {
+                let length = serializeRoleDataV10(null, settings.roleData) + 54;
+                let buffer = new ArrayBuffer(length);
+                let dv = new DataView(buffer);
+                dv.setBool = (offset, value) => dv.setUint8(offset, (value ? 1 : 0)) > 0;
+
+                dv.setUint8(0x0, 0xA);
+                dv.setUint16(0x1, length - 4, true);
+                dv.setUint8(0x3, 0x0);
+                dv.setUint8(0x4, settings.gameMode);
+                dv.setUint8(0x5, settings.specialMode);
+                dv.setUint8(0x6, settings.rulesPreset);
+                dv.setUint8(0x7, settings.maxPlayers);
+                dv.setUint32(0x8, settings.language, true);
+                dv.setUint8(0xc, settings.mapId);
+                dv.setFloat32(0xd, settings.playerSpeed, true);
+                dv.setFloat32(0x11, settings.crewmateVision, true);
+                dv.setFloat32(0x15, settings.impostorVision, true);
+                dv.setFloat32(0x19, settings.killCooldown, true);
+                dv.setUint8(0x1d, settings.commonTasks);
+                dv.setUint8(0x1e, settings.longTasks);
+                dv.setUint8(0x1f, settings.shortTasks);
+                dv.setInt32(0x20, settings.emergencyMeetings, true);
+                dv.setUint8(0x24, settings.impostors);
+                dv.setUint8(0x25, settings.killDistance);
+                dv.setInt32(0x26, settings.discussionTime, true);
+                dv.setInt32(0x2a, settings.votingTime, true);
+                dv.setBool(0x2e, settings.isDefaults);
+                dv.setUint8(0x2f, settings.emergencyCooldown);
+                dv.setBool(0x30, settings.confirmEjects);
+                dv.setBool(0x31, settings.visualTasks);
+                dv.setBool(0x32, settings.anonymousVotes);
+                dv.setUint8(0x33, settings.taskBarMode);
+                dv.setUint8(0x34, settings.tag);
+
+                let roleBuffer = serializeRoleDataV10(buffer.slice(0x35), settings.roleData);
+                let roleArray = new Uint8Array(roleBuffer);
+                for (let i = 0; i < roleBuffer.byteLength; i++) {
+                    dv.setUint8(0x35 + i, roleArray[i]);
+                }
+                return buffer;
+            }
+        </script>
+
+        <script>
+            let settings;
+
+            function showAlert(message) {
+                const alerts = document.querySelector("#alerts");
+                let alert = document.createElement("div");
+                alert.classList.add("alert");
+                alert.innerText = message;
+                alerts.appendChild(alert);
+                let hidden = false;
+
+                setTimeout(() => {
+                    alert.style.right = "13px";
+                    setTimeout(() => {
+                        if (hidden) return;
+                        hidden = true;
+                        alert.style.right = "-100%";
+                        setTimeout(() => {
+                            alert.remove();
+                        }, 300);
+                    }, 4000);
+                    alert.addEventListener('click', () => {
+                        if (hidden) return;
+                        hidden = true;
+                        alert.remove();
+                    });
+                });
+            }
+
+            function base64ToBytearray(string) {
+                let data = atob(string);
+                let buffer = new ArrayBuffer(data.length);
+                let arr = new Uint8Array(buffer);
+                for (let i = 0; i < data.length; i++) {
+                    arr[i] = data.charCodeAt(i);
+                }
+                return buffer;
+            }
+            function bytearrayToBase64(bytearray) {
+                let arr = new Uint8Array(bytearray);
+                let string = "";
+                for (let i = 0; i < bytearray.byteLength; i++) {
+                    string += String.fromCharCode(arr[i]);
+                }
+                return btoa(string);
+            }
+
+            function populateFields(settings) {
+                function getSetting(name) {
+                    let parts = name.split('.');
+                    let result = settings;
+                    for (let i of parts) {
+                        result = result[i];
+                    }
+                    return result;
+                }
+                document.querySelectorAll(".page select, .page input").forEach(el => {
+                    if (el.name) {
+                        let value = getSetting(el.name);
+                        if (el instanceof HTMLSelectElement)
+                            setOptionValue(value, el);
+                        if (el instanceof HTMLInputElement) {
+                            if (el.type == 'number')
+                                el.value = value;
+                            if (el.type == 'checkbox')
+                                el.checked = value;
+                        }
+                    }
+                });
+            }
+            function dumpFields() {
+                let settings = {};
+                function setSetting(name, value) {
+                    let parts = name.split('.');
+                    let result = settings;
+                    for (let i of parts.slice(0, -1)) {
+                        if (!result.hasOwnProperty(i)) result[i] = {};
+                        result = result[i];
+                    }
+                    result[parts.slice(-1)[0]] = value;
+                }
+                document.querySelectorAll(".page select, .page input").forEach(el => {
+                    if (el.name) {
+                        let value = null;
+                        if (el instanceof HTMLSelectElement)
+                            value = +el.value;
+                        if (el instanceof HTMLInputElement) {
+                            if (el.type == 'number')
+                                value = +el.value;
+                            if (el.type == 'checkbox')
+                                value = el.checked;
+                        }
+                        if (value != null) 
+                            setSetting(el.name, value);
+                    }
+                });
+                return settings;
+            }
+
+            function loadSerializedB64(string) {
+                showPopup('loading', 'block');
+                let bytearray = base64ToBytearray(string);
+                let settings = deserializeNormalGameOptionsV10(bytearray);
+                if (!settings.success) {
+                    showAlert(settings.error);
+                    showPopup('data', 'flex');
+                    return false;
+                }
+                console.log(settings);
+                closePopup();
+
+                populateFields(settings.data);
+                return true;
+            }
+
+            function closePopup() {
+                const overlay = document.querySelector('#overlay');
+                overlay.style.opacity = "0";
+                overlay.style.pointerEvents = "none";
+            }
+            function showPopup(name, display) {
+                const overlay = document.querySelector('#overlay');
+                overlay.style.opacity = "1";
+                overlay.style.pointerEvents = "unset";
+                document.querySelectorAll('.popup').forEach(i => i.style.display = 'none');
+                document.querySelector('#'+name+'-popup').style.display = display;
+            }
+
+            document.querySelector("#data-popup button[name=\"core\"]").addEventListener('click', () => {
+                loadSerializedB64('CoQAAAEAAAoAAQAAAAAAgD8AAIA/AADAPwAAcEEBAQIBAAAAAQEPAAAAeAAAAAEAAQEAAAAJBQAAAAMAAAAKCAIAAAACAAAPBQQAAAADAAA8CgADAAAAAgAAHg8IAAAAAgAACgEJAAAAAgAADx4KAAAAAwAADx4BDAAAAAEAAAMSAAAAAQAADw==');
+            });
+            document.querySelector("#data-popup button[name=\"roles\"]").addEventListener('click', () => {
+                loadSerializedB64('CoQAAAEAAQoAAQAAAAAAgD8AAIA/AADAPwAANEIBAQIBAAAAAQEPAAAAeAAAAAAAAQEAAAAJBQABZAMAAAAKHgIAAWQCAAAPBQQAAWQDAAA8CgADAAFkAgAAHg8IAAFkAgAACgEJAAFkAgAADx4KAAFkAwAADx4BDAABZAEAAAMSAAFkAQAADw==');
+                // loadSerializedB64("CoQAAAEBZA8IAAAAAAAAoEAAAIA/AADAPwAAAAAAAAEBAAAAAgAFAAAAAgAAAAAPAQEBAgAJAgAAAAIAAAAAAwANZAIAAAD/BAAAAAMAAAAAAAUAAAADAAAAAAAIAAAAAgAAAAAJAAAAAgAAAAAKAAAAAwAAAAAADAAAAAEAAAASAAJkAQAAAg==");
+                // showAlert("loading export test data");
+            });
+
+            document.querySelector('#data-popup button[name="continue"]').addEventListener('click', () => {
+                const input = document.querySelector('#data-popup input');
+                let accepted = true;
+                accepted = accepted && input.value;
+                try {
+                    atob(input.value);
+                } catch {
+                    accepted = false;
+                }
+                if (!accepted) {
+                    input.value = "";
+                    showAlert("Couldn't parse the options string");
+                    return;
+                }
+                if (!loadSerializedB64(input.value))
+                    input.value = "";
+            });
+
+            function registerTopbar() {
+                const gameBtn = document.querySelector('#topbar button[name="game"]');
+                const rolesBtn = document.querySelector('#topbar button[name="roles"]');
+                const game = document.querySelector('#game');
+                const roles = document.querySelector('#roles');
+                const rolesTopbar = document.querySelector('#roles-topbar');
+
+                gameBtn.addEventListener('click', () => {
+                    game.style.display = 'flex';
+                    roles.style.display = 'none';
+                    rolesTopbar.style.display = 'none';
+                    gameBtn.classList.add('selected');
+                    rolesBtn.classList.remove('selected');
+                });
+                rolesBtn.addEventListener('click', () => {
+                    game.style.display = 'none';
+                    roles.style.display = 'block';
+                    rolesTopbar.style.display = 'flex';
+                    gameBtn.classList.remove('selected');
+                    rolesBtn.classList.add('selected');
+                });
+            }
+            registerTopbar();
+
+            function registerRolesTopbar() {
+                const allBtn = document.querySelector('#roles-topbar button[name="all"]');
+                const crewmatesBtn = document.querySelector('#roles-topbar button[name="crewmates"]');
+                const impostorsBtn = document.querySelector('#roles-topbar button[name="impostors"]');
+                const all = document.querySelector('#roles-all');
+                const crewmates = document.querySelector('#roles-crewmates');
+                const impostors = document.querySelector('#roles-impostors');
+
+                allBtn.addEventListener('click', () => {
+                    all.style.display = 'flex';
+                    crewmates.style.display = 'none';
+                    impostors.style.display = 'none';
+                    allBtn.classList.add('selected');
+                    crewmatesBtn.classList.remove('selected');
+                    impostorsBtn.classList.remove('selected');
+                });
+                crewmatesBtn.addEventListener('click', () => {
+                    all.style.display = 'none';
+                    crewmates.style.display = 'flex';
+                    impostors.style.display = 'none';
+                    allBtn.classList.remove('selected');
+                    crewmatesBtn.classList.add('selected');
+                    impostorsBtn.classList.remove('selected');
+                });
+                impostorsBtn.addEventListener('click', () => {
+                    all.style.display = 'none';
+                    crewmates.style.display = 'none';
+                    impostors.style.display = 'flex';
+                    allBtn.classList.remove('selected');
+                    crewmatesBtn.classList.remove('selected');
+                    impostorsBtn.classList.add('selected');
+                });
+            }
+            registerRolesTopbar();
+
+            function registerSetval() {
+                let selectEl;
+
+                document.querySelectorAll("#game .setval").forEach(i => i.addEventListener('click', e => {
+                    selectEl = e.target.parentElement.querySelector('select');
+                    const input = document.querySelector('#setval-popup input');
+                    input.value = selectEl.value;
+                    showPopup('setval', 'flex');
+                }));
+
+                document.querySelector('#setval-popup button[name="cancel"]').addEventListener('click', closePopup);
+                document.querySelector('#setval-popup button[name="ok"]').addEventListener('click', e => {
+                    const input = document.querySelector('#setval-popup input');
+                    setOptionValue(input.value, selectEl);
+                    closePopup();
+                });
+            }
+            registerSetval();
+
+            function setOptionValue(val, el) {
+                el.value = val;
+                if (!el.value) {
+                    let option = document.createElement('option');
+                    option.value = val;
+                    option.innerText = 'Custom: '+val;
+                    el.appendChild(option);
+                    el.value = val;
+                }
+            }
+
+            document.querySelector('#topbar .export').addEventListener('click', () => {
+                showPopup("loading", "block");
+                const textarea = document.querySelector('#export-popup textarea');
+                let settings = dumpFields();
+                let data = serializeNormalGameOptionsV10(settings);
+                console.log(settings);
+                textarea.innerText = bytearrayToBase64(data);
+                showPopup('export', 'flex');
+            });
+
+            document.querySelector('#export-popup button').addEventListener('click', closePopup);
+        </script>
+    </body>
+</html>
